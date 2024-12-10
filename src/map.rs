@@ -10,9 +10,41 @@ pub struct Map<Tile: Debug + Clone> {
     default_tile: Tile,
 }
 
-type Scalar = i32;
+pub type Scalar = i32;
 
+pub trait ToChar {
+    fn to_char(&self) -> char;
+}
+
+impl <Tile: Debug + Clone> Map<Tile> where for<'a> char: From<&'a Tile> {
+    pub fn print_map(&self) {
+        for (i, tile) in self.tiles.iter().enumerate() {
+            print!("{}", char::from(tile));
+            if i % self.width ==(self.width-1) {
+                println!();
+            }
+        }
+    }
+}
+
+impl<Tile: Debug + Clone + Default + From<char>> Map<Tile> {
+    pub fn parse_ascii(input: &str) -> Self {
+        let width = input.lines().next().unwrap().len();
+        let height = input.lines().count();
+        let tiles = input
+            .lines()
+            .flat_map(|line| line.chars().map(|c| Tile::from(c)))
+            .collect();
+        Self {
+            width,
+            height: Some(height),
+            tiles,
+            default_tile: Tile::default(),
+        }
+    }
+}
 impl<Tile: Debug + Clone> Map<Tile> {
+
     pub fn with_unknown_height(width: usize, default_tile: Tile) -> Self {
         Self {
             width,
@@ -62,6 +94,10 @@ impl<Tile: Debug + Clone> Map<Tile> {
         } else {
             (self.tiles.len()+1) / self.width
         }
+    }
+
+    pub fn tiles_iter(&self) -> impl Iterator<Item = &Tile> {
+        self.tiles.iter()
     }
 }
 
