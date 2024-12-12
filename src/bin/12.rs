@@ -84,14 +84,14 @@ pub fn part_two(input: &str) -> Option<u32> {
             let mut todo = VecDeque::from([(x as i32, y as i32)]);
             let mut sides: HashSet<(i32, i32, i32)> = HashSet::new();
             let mut counts = [0, 0, 0, 0, 0];
-            while let Some((x, y)) = todo.pop_front() {
+            while let Some((x, y)) = todo.pop_back() {
                 let tile = &mut map[(x, y)];
                 if tile.visited {
                     continue;
                 }
                 tile.visited = true;
                 area += 1;
-                'outer: for (dx, dy, dir) in [(-1, 0, 1), (1, 0, 2), (0, -1, 3), (0, 1, 4)] {
+                for (dx, dy, dir) in [(-1, 0, 1), (1, 0, 2), (0, -1, 3), (0, 1, 4)] {
                     if map.is_in_bounds(x + dx, y + dy) {
                         let tile = &mut map[(x + dx, y + dy)];
                         if tile.crop == crop {
@@ -100,14 +100,16 @@ pub fn part_two(input: &str) -> Option<u32> {
                         }
                     }
                     sides.insert((x, y, dir));
+                    let mut found_sides = 0i32;
                     for (sx, sy) in [(-1, 0), (0, -1), (1, 0), (0, 1)] {
                         if sides.contains(&(x + sx, y + sy, dir)) {
                             // Side already visited, do not increase perimeter
-                            continue 'outer;
+                            found_sides += 1;
                         }
                     }
+                    //dbg!(found_sides);
                     // New side, increase perimeter
-                    perimeter += 1;
+                    perimeter += 1 - found_sides;
                     counts[dir as usize] += 1;
                     if dir == 3 {
 //                        dbg!((x, y, dir));
@@ -120,7 +122,7 @@ pub fn part_two(input: &str) -> Option<u32> {
             result += perimeter * area;
         }
     }
-    Some(result)
+    Some(result as u32)
 }
 
 #[cfg(test)]
