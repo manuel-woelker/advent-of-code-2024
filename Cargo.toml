@@ -30,3 +30,4 @@ tinyjson = "2.5.1"
 # Solution dependencies
 regex = "1.11.1"
 unscanny = "0.1"
+#image = "0.25.5"
