@@ -112,6 +112,8 @@ impl<Tile: Debug + Clone> IndexMut<(Scalar, Scalar)> for Map<Tile> {
     }
 }
 
+
+
 impl<Tile: Debug + Clone> Index<(Scalar, Scalar)> for Map<Tile> {
     type Output = Tile;
 
@@ -120,3 +122,25 @@ impl<Tile: Debug + Clone> Index<(Scalar, Scalar)> for Map<Tile> {
         &self.tiles[index as usize]
     }
 }
+
+impl<Tile: Debug + Clone> IndexMut<(usize, usize)> for Map<Tile> {
+    fn index_mut(&mut self, (x, y): (usize, usize)) -> &mut Self::Output {
+        let index = self.get_index(x as Scalar,y as Scalar);
+        let missing = index as isize +1 - self.tiles.len() as isize;
+        if missing > 0 {
+            self.tiles.extend(repeat(self.default_tile.clone()).take(missing as usize))
+        }
+        &mut self.tiles[index as usize]
+    }
+}
+
+
+impl<Tile: Debug + Clone> Index<(usize, usize)> for Map<Tile> {
+    type Output = Tile;
+
+    fn index(&self, (x, y): (usize, usize)) -> &Self::Output {
+        let index = self.get_index(x as Scalar,y as Scalar);
+        &self.tiles[index as usize]
+    }
+}
+
