@@ -43,6 +43,16 @@ impl<Tile: Debug + Clone + Default + From<char>> Map<Tile> {
         }
     }
 }
+impl <Tile: Debug + Clone + Default> Map<Tile> {
+    pub fn new(width: usize, height: usize) -> Self {
+        Self {
+            width,
+            height: Some(height),
+            tiles: repeat(Tile::default()).take(width * height).collect(),
+            default_tile: Tile::default(),
+        }
+    }
+}
 impl<Tile: Debug + Clone> Map<Tile> {
 
     pub fn with_unknown_height(width: usize, default_tile: Tile) -> Self {
