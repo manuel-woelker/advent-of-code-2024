@@ -70,7 +70,6 @@ struct Path {
     pos: (Scalar, Scalar),
     visited: HashSet<(Scalar, Scalar)>,
     distance: u64,
-    has_cheated: bool,
 }
 
 pub fn part_one(input: &str) -> Option<u32> {
@@ -89,34 +88,6 @@ pub fn part_one(input: &str) -> Option<u32> {
             } else if tile.kind == TileKind::End {
                 tile.distance_to_end = 0;
                 end = (x as Scalar, y as Scalar);
-            }
-        }
-    }
-    // Find shortest path
-    let mut heap = BinaryHeap::new();
-    heap.push(Entry { pos: start, distance: 0, score: 0 });
-    let mut shortest_path = u64::MAX;
-    let mut visited = HashSet::new();
-    while let Some(entry) = heap.pop() {
-        if entry.pos == end {
-            shortest_path = entry.distance;
-            break;
-        }
-        if !visited.insert(entry.pos) {
-            continue;
-        }
-        let (x, y) = entry.pos;
-        let distance = entry.distance + 1;
-        for (dx, dy) in [(0, 1), (0, -1), (1, 0), (-1, 0)] {
-            let nx = x + dx;
-            let ny = y + dy;
-            if !map.is_in_bounds(nx, ny) || map[(nx, ny)].kind == TileKind::Wall {
-                continue;
-            }
-            let score = distance + ((end.0 - nx).abs() + (end.1 - ny).abs()) as u64;
-            heap.push(Entry { pos: (nx, ny), distance, score });
-            if heap.len() > 1_000 {
-                panic!("Too many entries");
             }
         }
     }
@@ -139,16 +110,17 @@ pub fn part_one(input: &str) -> Option<u32> {
             todo.push((nx, ny));
         }
     }
-    println!("Shortest path is {}", shortest_path);
+    let shortest_path = map[start].distance_to_end;
     println!("Shortest path is {}", map[start].distance_to_end);
     let maximum_distance = (shortest_path as i64 - min_cheat_improvement) as u64;
     println!("Maximum distance is {}", maximum_distance);
 
-    let mut todo = vec![Path { pos: start, visited: HashSet::new(), distance: 0, has_cheated: false }];
+    let mut todo = vec![Path { pos: start, visited: HashSet::new(), distance: 0 }];
     let mut found_paths = 0;
     while let Some(mut path) = todo.pop() {
         if path.pos == end {
             found_paths += 1;
+            panic!("Should not happen");
             continue;
         }
         path.visited.insert(path.pos);
@@ -163,19 +135,24 @@ pub fn part_one(input: &str) -> Option<u32> {
             if path.visited.contains(&(nx, ny)) {
                 continue;
             }
-            let mut has_cheated = path.has_cheated;
             if map[(nx, ny)].kind == TileKind::Wall {
-                if !has_cheated {
-                    has_cheated = true;
-                } else {
+                // Try cheating
+                let nnx = nx + dx;
+                let nny = ny + dy;
+                if !map.is_in_bounds(nnx, nny) || map[(nnx, nny)].kind == TileKind::Wall {
                     continue;
                 }
+                let total_distance = distance + map[(nnx, nny)].distance_to_end +1;
+                if total_distance <= maximum_distance {
+                    found_paths += 1;
+                }
+                continue;
             }
             let score = distance + ((end.0 - nx).abs() + (end.1 - ny).abs()) as u64;
             if score > maximum_distance {
                 continue;
             }
-            todo.push(Path { pos: (nx, ny), visited: path.visited.clone(), distance, has_cheated });
+            todo.push(Path { pos: (nx, ny), visited: path.visited.clone(), distance });
         }
     }
     Some(found_paths)
@@ -193,6 +170,18 @@ mod tests {
     fn test_part_one() {
         let result = part_one(&advent_of_code::template::read_file("examples", DAY));
         assert_eq!(result, Some(10));
+    }
+
+    #[test]
+    fn test_part_one_11() {
+        let result = part_one(&advent_of_code::template::read_file_part("examples", DAY, 11));
+        assert_eq!(result, Some(8));
+    }
+
+    #[test]
+    fn test_part_one_12() {
+        let result = part_one(&advent_of_code::template::read_file_part("examples", DAY, 12));
+        assert_eq!(result, Some(8));
     }
 
     #[test]
