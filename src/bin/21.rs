@@ -1,18 +1,15 @@
+use std::collections::HashMap;
 use advent_of_code::map::{Map, Scalar};
 
 advent_of_code::solution!(21);
 
-struct Path {
-    pos: (Scalar, Scalar),
-    length: u32,
-}
-
 pub fn part_one(input: &str) -> Option<u64> {
+    let mut map = HashMap::new();
     let codes = input.lines().collect::<Vec<_>>();
     let mut result = 0;
     for code in codes {
         //dbg!(code);
-        let length = get_shortest_path_length_numeric(code, 2);
+        let length = get_shortest_path_length_numeric(code, 2, &mut map);
         let ncode: i64 = code[0..3].parse().unwrap();
 //        dbg!(ncode);
 //        dbg!(length);
@@ -21,7 +18,7 @@ pub fn part_one(input: &str) -> Option<u64> {
     Some(result as u64)
 }
 
-fn get_shortest_path_length_numeric(code: &str, depth: u32) -> i64 {
+fn get_shortest_path_length_numeric(code: &str, depth: u32, memo_map: &mut HashMap<(String, u32), i64>) -> i64 {
     let mut numeric_map = Map::new(3, 4);
     numeric_map[(0, 0)] = '7';
     numeric_map[(1, 0)] = '8';
@@ -77,12 +74,19 @@ fn get_shortest_path_length_numeric(code: &str, depth: u32) -> i64 {
 //    dbg!(&shortest_paths);
     let mut length = 0;
     for path in shortest_paths {
-        length += path.iter().map(|s| get_shortest_path_keypad(s,depth-1)).min().unwrap();
+        length += path.iter().map(|s| {
+            get_shortest_path_keypad(s, depth - 1, memo_map)
+        }).min().unwrap();
     }
     length as i64
 }
 
-fn get_shortest_path_keypad(code: &str, depth: u32) -> i64 {
+fn get_shortest_path_keypad(original_code: &str, depth: u32, memo_map: &mut HashMap<(String, u32), i64>) -> i64 {
+//    dbg!(&memo_map, original_code, depth);
+    if let Some(result) = memo_map.get(&(original_code.to_string(), depth)) {
+//        dbg!(result);
+        return *result;
+    }
     let mut keypad_map = Map::new(3, 2);
     keypad_map[(0, 0)] = 'X';
     keypad_map[(1, 0)] = '^';
@@ -92,7 +96,7 @@ fn get_shortest_path_keypad(code: &str, depth: u32) -> i64 {
     keypad_map[(2, 1)] = '>';
     let mut shortest_paths = vec![];
 //    dbg!(code);
-    let code = "A".to_string()+code;
+    let code = "A".to_string()+ original_code;
     for (first, second) in code.chars().zip(code.chars().skip(1)) {
         if first == second {
             shortest_paths.push(vec!["A".to_string()]);
@@ -136,9 +140,11 @@ fn get_shortest_path_keypad(code: &str, depth: u32) -> i64 {
         }
     } else {
         for path in shortest_paths {
-            length += path.iter().map(|s| get_shortest_path_keypad(s, depth-1)).min().unwrap();
+            length += path.iter().map(|s| get_shortest_path_keypad(s, depth-1, memo_map)).min().unwrap();
         }
     }
+//    dbg!(&code, depth);
+    memo_map.insert((original_code.to_string(), depth), length);
     length as i64
 }
 
@@ -146,9 +152,10 @@ fn get_shortest_path_keypad(code: &str, depth: u32) -> i64 {
 pub fn part_two(input: &str) -> Option<u64> {
     let codes = input.lines().collect::<Vec<_>>();
     let mut result = 0;
+    let mut memo_map = HashMap::default();
     for code in codes {
         //dbg!(code);
-        let length = get_shortest_path_length_numeric(code, 25);
+        let length = get_shortest_path_length_numeric(code, 25, &mut memo_map);
         let ncode: i64 = code[0..3].parse().unwrap();
         //        dbg!(ncode);
         //        dbg!(length);
