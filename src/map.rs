@@ -10,6 +10,19 @@ pub struct Map<Tile: Debug + Clone> {
     default_tile: Tile,
 }
 
+impl<Tile: Debug + Clone> Map<Tile> {
+    pub fn find_tile_pos(&self, check: impl Fn(&Tile) -> bool) -> Option<(Scalar, Scalar)> {
+        for y in 0..self.get_height() {
+            for x in 0..self.width {
+                if check(&self[(x, y)]) {
+                    return Some((x as Scalar, y as Scalar));
+                }
+            }
+        }
+        return None;
+    }
+}
+
 pub type Scalar = i32;
 
 pub trait ToChar {
