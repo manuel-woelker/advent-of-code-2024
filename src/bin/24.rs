@@ -135,7 +135,7 @@ pub fn part_two(input: &str) -> Option<String> {
         output_map.insert(gate.output.clone(), gate);
     }
     let number_of_input_bits = 44;
-    dbg!(&wire_map2);
+    //dbg!(&wire_map2);
     // x00 AND y00 -> z00
     for i in 0..=number_of_input_bits {
         let key = format!("x{:02} {:?} y{:02}", i, Op::Xor, i);
@@ -146,7 +146,7 @@ pub fn part_two(input: &str) -> Option<String> {
     }
     let mut i = number_of_input_bits;
     let mut wrong_outputs = HashSet::new();
-    loop {
+/*    loop {
         if i < 2 {
             break;
         }
@@ -184,7 +184,9 @@ pub fn part_two(input: &str) -> Option<String> {
 //        dbg!(carry_a);
 //        dbg!(carry_b);
     }
-    for gate in &gates {
+
+ */
+/*    for gate in &gates {
         if !(gate.a.starts_with("x") || gate.a.starts_with("y") || gate.b.starts_with("x") || gate.b.starts_with("y") || gate.output.starts_with("z")) {
             if gate.op == Op::Xor {
                 dbg!(gate);
@@ -197,9 +199,100 @@ pub fn part_two(input: &str) -> Option<String> {
     let carry_a = output_map.get(&last_carry_gate.a).unwrap();
     let carry_b = output_map.get(&last_carry_gate.b).unwrap();
     dbg!(carry_a);
-    dbg!(carry_b);
-    dbg!(wrong_outputs);
-    None
+    dbg!(carry_b);*/
+
+    for gate in &gates {
+        match gate.op {
+            Op::Xor => {
+                if !(gate.a.starts_with("x") || gate.a.starts_with("y") || gate.b.starts_with("x") || gate.b.starts_with("y")) {
+                    if !gate.output.starts_with("z") {
+                        wrong_outputs.insert(gate.output.clone());
+                    }
+                } else {
+                    if !(gate.a.starts_with("x") || gate.a.starts_with("y")) && (gate.b.starts_with("x") || gate.b.starts_with("y")) {
+                        println!("UNEXPECTED");
+                    }
+                    if gate.output == "z00" {
+                        continue;
+                    }
+                    if gate.output.starts_with("z") {
+                        wrong_outputs.insert(gate.output.clone());
+                        continue;
+                    }
+                    let Some(next_gates) = wire_map.get(&gate.output) else {
+                        dbg!(&gate.output);
+                        wrong_outputs.insert(gate.output.clone());
+                        continue;
+                    };
+                    let mut has_and = false;
+                    let mut has_xor = false;
+                    for next_gate in next_gates {
+                        if next_gate.op == Op::And {
+                            has_and = true;
+                        } else if next_gate.op == Op::Xor {
+                            has_xor = true;
+                        }
+                    }
+                    if !(has_and || has_xor) {
+                        wrong_outputs.insert(gate.output.clone());
+                    }
+                }
+            }
+            Op::Or => {
+                if gate.output.starts_with("z") {
+                    if gate.output == "z45" {
+                        continue;
+                    }
+                    wrong_outputs.insert(gate.output.clone());
+                    continue;
+                }
+                let Some(next_gates) = wire_map.get(&gate.output) else {
+                    wrong_outputs.insert(gate.output.clone());
+                    continue;
+                };
+                let mut has_and = false;
+                let mut has_xor = false;
+                for next_gate in next_gates {
+                    if next_gate.op == Op::And {
+                        has_and = true;
+                    } else if next_gate.op == Op::Xor {
+                        has_xor = true;
+                    }
+                }
+                if !(has_and && has_xor) {
+                    wrong_outputs.insert(gate.output.clone());
+                }
+            }
+            Op::And => {
+                if gate.output.starts_with("z")||gate.output.starts_with("x")||gate.output.starts_with("y") {
+                    wrong_outputs.insert(gate.output.clone());
+                    continue;
+                }
+                let Some(next_gates) = wire_map.get(&gate.output) else {
+                    wrong_outputs.insert(gate.output.clone());
+                    continue;
+                };
+                let mut has_or = false;
+                for next_gate in next_gates {
+                    if next_gate.op == Op::Or {
+                        has_or = true;
+                    }
+                }
+                if !(has_or) {
+                    wrong_outputs.insert(gate.output.clone());
+                }
+            }
+        }
+    }
+    let mut wrong_output_list: Vec<_> = wrong_outputs.into_iter().collect();
+    wrong_output_list.sort();
+    dbg!(&wrong_output_list);
+    dbg!(&wrong_output_list.len());
+    Some(wrong_output_list.join(","))
+    // WRONG: drg,gvw,jbp,jgc,nvv,z00,z15,z22,z35
+    // WRONG: drg,gvw,jbp,jgc,nvv,qjb,z15,z22,z35
+
+    // CORRECT: drg,gvw,jbp,jgc,qjb,z15,z22,z35
 }
 
 #[cfg(test)]
